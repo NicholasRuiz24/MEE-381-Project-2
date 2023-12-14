@@ -78,13 +78,35 @@ public class Simulator
     // Step: Executes one numerical integration step using the RK4 
     //            method.
     //--------------------------------------------------------------------
-    public void Step(double time, double dTime)
+public void StepRK4(double time, double dTime)
     {
-        //int i;
+        int i;
 
-        // It's your job to write the rest of this.
+        rhsFunc(x,time,f[0]);
+        for(i=0;i<n;++i)
+        {
+            xi[i] = x[i] + (f[0][i]*.5) * dTime;
+        }
+
+        rhsFunc(xi,time+ (dTime*.5),f[1]);
+        for(i=0;i<n;++i)
+        {
+            xi[i] = x[i] + 0.5*(f[1][i])*dTime;
+        }  
+
+        rhsFunc(xi,time+ (dTime*.5),f[2]);
+        for (i=0;i<n;++i)
+        {
+            xi[i] = x[i] + f[2][i] * dTime;
+        }
+        
+        rhsFunc(xi,time+ (dTime),f[3]);
+        for (i=0;i<n;++i)
+        {
+            x[i] += (1.0/6.0)*(f[0][i] + 2*f[1][i] + 2*f[2][i] + f[3][i])*dTime;
+        }
+
     }
-
     //--------------------------------------------------------------------
     // SetRHSFunc: Receives function from derived class to calculate 
     //             rhs of ODE.

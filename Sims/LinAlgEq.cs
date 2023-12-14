@@ -12,11 +12,11 @@ public class LinAlgEq
     private double[] _x;     // solution
 
     //--------------------------------------------------------------------
-    // Constructor for the class.
+    // Constructor for the class
     //--------------------------------------------------------------------
     public LinAlgEq(int nn = 3)
     {
-        _b = new double[1];   // these three lines get rid of the warning
+        _b = new double[1];   //These three lines get rid of the warning
         _A = new double[1][];
         M  = new double[1][];
         _x = new double[1];
@@ -26,11 +26,11 @@ public class LinAlgEq
 
     //--------------------------------------------------------------------
     // resize: resize the matrices to hold the right number of equations
-    //         and unknowns.
+    //         and unknowns
     //--------------------------------------------------------------------
     public void Resize(int nn)
     {
-        // ##### should check if nn is bigger than zero
+        //Should check if nn is bigger than zero
         n = nn;
 
         _b = new double[n];
@@ -70,16 +70,27 @@ public class LinAlgEq
             M[i][n] = _b[i];
         }
 
-        // perform Gauss elimination
-        // ######## YOU MUST WRITE YOUR GAUSS ELIMINATION CODE HERE
-        // ######## FIRST, GET IT WORKING WITHOUT PIVOTING
-        // ########     ONCE YOU GET IT WORKING WITHOUT PIVOTING, 
-        // ########     THEN YOU CAN IMPLEMENT PIVOTING WITH ONE 
-        // ########     WELL-PLACED CALL TO THE pivotRow METHOD BELOW.
-        
+        //Function to do gauss elimation
+        double mat;
+        for(i=0;i<(n-1);++i){
+            PivotRow(i);
+            for(j=i+1;j<n;++j){
+                mat = M[j][i]/M[i][i];
+                for(k=i;k<=n;++k){
+                    M[j][k] -= mat*M[i][k];
+                }
+            }
+        }
 
         // perform back substitution
-        // ######## YOU MUST WRITE YOUR BACK SUBSTITUTION CODE HERE
+        double sum;
+        for(i=n-1;i>=0;--i){
+            sum = M[i][n];
+            for(j=n-1;j>i;--j){
+                sum -= M[i][j]*_x[j];
+            }
+            _x[i] = sum/M[i][i];
+        }
     }
 
     //--------------------------------------------------------------------
@@ -108,7 +119,6 @@ public class LinAlgEq
             holder = M[j];
             M[j] = M[rowIdx];
             M[rowIdx] = holder;
-            //Console.WriteLine("Swap " + j.ToString());
         }
     }
 

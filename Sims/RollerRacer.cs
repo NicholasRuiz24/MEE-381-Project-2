@@ -3,6 +3,7 @@
 //       Equations of motion are derived in class notes.
 //============================================================================
 using System;
+using System.Xml.Linq;
 
 public class RollerRacer : Simulator
 {
@@ -19,11 +20,15 @@ public class RollerRacer : Simulator
 
     double kPDelta;  // proportional gain for steer filter
     double kDDelta;  // derivative gain for steer filter
+    double kPSlip;
     double deltaDes; // desired steer angle
+    double deltaDoubleDot;
 
     double muS;      // static frict coeff, lower bound
 
     bool simBegun;   // indicates whether simulation has begun
+
+    LinAlgEq Matrix;
 
     public RollerRacer() : base(11)
     {
@@ -35,6 +40,7 @@ public class RollerRacer : Simulator
             0.15 /*steered wheel radius*/);
         kPDelta = 10.0;
         kDDelta = 4.0;
+        kPSlip = 2.0;
 
         x[0] = 0.0;   // x coordinate of center of mass
         x[1] = 0.0;   // xDot, time derivative of x
@@ -49,6 +55,7 @@ public class RollerRacer : Simulator
         x[10] = 0.0;  // deltaDot, steer rate
 
         SetRHSFunc(RHSFuncRRacer);
+        Matrix = new LinAlgEq(5);
         simBegun = false;
     }
 
@@ -70,18 +77,67 @@ public class RollerRacer : Simulator
         double cosPsiPlusDelta = Math.Cos(psi + delta);
         double sinPsiPlusDelta = Math.Sin(psi + delta);
 
-        // #### You will do some hefty calculations here
+        //Matrix setup and solves matrix
+        deltaDoubleDot = -kDDelta*deltaDot-kPDelta*(delta-deltaDes);
 
-        // #### Right sides are zero for now. You will fix
-        ff[0] = 0.0;
-        ff[1] = 0.0;
-        ff[2] = 0.0;
-        ff[3] = 0.0;
-        ff[4] = 0.0;
-        ff[5] = 0.0;
-        ff[6] = 0.0;
-        ff[7] = 0.0;
-        ff[8] = 0.0;
+        //0 is x**
+        //1 is z**
+        //2 is psi**
+        //3 is Fb
+        //4 is Ff
+
+        //Equation 1
+        Matrix.A[0][0] = m;
+        Matrix.A[0][1] = 0;
+        Matrix.A[0][2] = 0;
+        Matrix.A[0][3] = -sinPsi;
+        Matrix.A[0][4] = -sinPsiPlusDelta;
+        Matrix.b[0] = 0;
+
+        //Equation 2
+        Matrix.A[1][0] = 0;
+        Matrix.A[1][1] = m;
+        Matrix.A[1][2] = 0;
+        Matrix.A[1][3] = -cosPsi;
+        Matrix.A[1][4] = -cosPsiPlusDelta;
+        Matrix.b[1] = 0;
+        
+        //Equation 3
+        Matrix.A[2][0] = 0;
+        Matrix.A[2][1] = 0;
+        Matrix.A[2][2] = Ig;
+        Matrix.A[2][3] = -b;
+        Matrix.A[2][4] = h*cosDelta-d;
+        Matrix.b[2] = 0;
+
+        //Equation 7
+        Matrix.A[3][0] = sinPsi;
+        Matrix.A[3][1] = cosPsi;
+        Matrix.A[3][2] = b;
+        Matrix.A[3][3] = 0;
+        Matrix.A[3][4] = 0;
+        Matrix.b[3] = -xDot*psi*cosPsi+zDot*psiDot*sinPsi-kPSlip*SlipRateRear;
+
+        //Equation 10
+        Matrix.A[4][0] = sinPsiPlusDelta;
+        Matrix.A[4][1] = cosPsiPlusDelta;
+        Matrix.A[4][2] = -h*cosDelta+d;
+        Matrix.A[4][3] = 0;
+        Matrix.A[4][4] = 0;
+        Matrix.b[4] = -d*deltaDoubleDot-xDot*(psiDot+deltaDot)*cosPsiPlusDelta+zDot*(psiDot+deltaDot)*sinPsiPlusDelta-h*psiDot*deltaDot*sinDelta-kPSlip*SlipRateFront;
+
+        Matrix.SolveGauss();
+
+        //Right Side Functions
+        ff[0] = xDot;
+        ff[1] = Matrix.sol[0];
+        ff[2] = zDot;
+        ff[3] = Matrix.sol[1];
+        ff[4] = psiDot;
+        ff[5] = Matrix.sol[2];
+        ff[6] = -(xDot*cosPsi-zDot*sinPsi-c*psiDot)/rW;
+        ff[7] = -(xDot*cosPsi-zDot*sinPsi+c*psiDot)/rW;
+        ff[8] = -(xDot*cosPsiPlusDelta-zDot*sinPsiPlusDelta+h*psiDot*sinDelta)/rWs;
         ff[9] = deltaDot;
         ff[10] = -kDDelta*deltaDot -kPDelta*(delta - deltaDes);
 
@@ -210,36 +266,34 @@ public class RollerRacer : Simulator
     public double Speed
     {
         get{
-            // ######## You have to write this part ################
 
-            return(-1.21212121);
+            return(Math.Sqrt(x[1]*x[1]+x[3]*x[3]));
         }
     }
 
     public double KineticEnergy
     {
         get{
-            // ######## You have to write this part ################
+            double TKE,RKE;
+            
+            TKE = .5*m*(x[1]*x[1]) + .5*m*(x[3]*x[3]);
+            RKE = .5*Ig*(x[5]*x[5]);
 
-            return(-1.21212121);
+            return(TKE + RKE);
         }
     }
 
     public double SlipRateFront
     {
         get{
-            // ######## You have to write this part ################
-
-            return(-1.21212121);
+            return(x[1]*Math.Sin(x[4]*x[9])+x[3]*Math.Cos(x[4]+x[9])-h*x[5]*Math.Cos(x[9])+x[9]*(x[5]+x[10]));
         }
     }
 
     public double SlipRateRear
     {
         get{
-            // ######## You have to write this part ################
-
-            return(-1.21212121);
+            return(x[1]*Math.Sin(x[4])+x[3]*Math.Cos(x[4])+b*x[5]);
         }
     }
 

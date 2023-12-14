@@ -101,10 +101,14 @@ public partial class RacerScene : Node3D
 	//------------------------------------------------------------------------
 	public override void _Process(double delta)
 	{
-		
-		cart.SetLoc(0.0f, 0.0f, 0.0f, // need to update this with other states
-			0.0f, 0.0f, 0.0f, 
-			(float)racer.SteerAngle);
+		//Updates position of cart based on getter functions
+		cart.SetLoc((float)racer.xG, (float)racer.zG, (float)racer.Heading,(float)racer.WheelAngleL, (float)racer.WheelAngleR, (float)racer.WheelAngleF, (float)racer.SteerAngle);
+
+		//Sets display values in simulation
+		dataDisplay.SetValue(1,(float)racer.Speed);
+		dataDisplay.SetValue(2,(float)racer.KineticEnergy);
+		dataDisplay.SetValue(3,(float)racer.SlipRateFront);
+		dataDisplay.SetValue(4,(float)racer.SlipRateRear);
 	}
 
     //------------------------------------------------------------------------
@@ -117,7 +121,7 @@ public partial class RacerScene : Node3D
 		ProcessPilotInput();
 		racer.SteerAngleSignal = (-50.0 * steerSig)*Math.PI/180.0;
 
-		racer.StepRK2(time,delta);  // You are going to use the RK4 integrator
+		racer.StepRK4(time,delta);  // You are going to use the RK4 integrator
 		time += delta;
 
 		camSubject.X = (float)racer.xG;
