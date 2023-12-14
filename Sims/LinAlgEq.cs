@@ -70,7 +70,7 @@ public class LinAlgEq
             M[i][n] = _b[i];
         }
 
-        //Function to do gauss elimation
+        //Function to do gauss elimination
         double mat;
         for(i=0;i<(n-1);++i){
             PivotRow(i);
