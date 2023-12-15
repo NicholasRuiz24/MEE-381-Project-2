@@ -27,7 +27,10 @@ public class RollerRacer : Simulator
     double muS;      // static frict coeff, lower bound
 
     bool simBegun;   // indicates whether simulation has begun
+    double SRF; //Front slip rate correction
+    double SRR; //Rear slip rate correction
 
+    //Calls LinAlgEq to make matrix to solve
     LinAlgEq Matrix;
 
     public RollerRacer() : base(11)
@@ -79,6 +82,8 @@ public class RollerRacer : Simulator
 
         //Matrix setup and solves matrix
         deltaDoubleDot = -kDDelta*deltaDot-kPDelta*(delta-deltaDes);
+        SRF = xDot*sinPsiPlusDelta+zDot*cosPsiPlusDelta-h*psiDot*cosDelta+d*(psiDot+deltaDot);
+        SRR = xDot*sinPsi+zDot*cosPsi+b*psiDot;
 
         //0 is x**
         //1 is z**
@@ -116,7 +121,7 @@ public class RollerRacer : Simulator
         Matrix.A[3][2] = b;
         Matrix.A[3][3] = 0;
         Matrix.A[3][4] = 0;
-        Matrix.b[3] = -xDot*psi*cosPsi+zDot*psiDot*sinPsi-kPSlip*SlipRateRear;
+        Matrix.b[3] = -xDot*psiDot*cosPsi+zDot*psiDot*sinPsi-kPSlip*SRR;
 
         //Equation 10
         Matrix.A[4][0] = sinPsiPlusDelta;
@@ -124,7 +129,7 @@ public class RollerRacer : Simulator
         Matrix.A[4][2] = -h*cosDelta+d;
         Matrix.A[4][3] = 0;
         Matrix.A[4][4] = 0;
-        Matrix.b[4] = -d*deltaDoubleDot-xDot*(psiDot+deltaDot)*cosPsiPlusDelta+zDot*(psiDot+deltaDot)*sinPsiPlusDelta-h*psiDot*deltaDot*sinDelta-kPSlip*SlipRateFront;
+        Matrix.b[4] = -d*deltaDoubleDot-xDot*(psiDot+deltaDot)*cosPsiPlusDelta+zDot*(psiDot+deltaDot)*sinPsiPlusDelta-h*psiDot*deltaDot*sinDelta-kPSlip*SRF;
 
         Matrix.SolveGauss();
 
@@ -286,7 +291,7 @@ public class RollerRacer : Simulator
     public double SlipRateFront
     {
         get{
-            return(x[1]*Math.Sin(x[4]*x[9])+x[3]*Math.Cos(x[4]+x[9])-h*x[5]*Math.Cos(x[9])+x[9]*(x[5]+x[10]));
+            return(x[1]*Math.Sin(x[4]+x[9])+x[3]*Math.Cos(x[4]+x[9])-h*x[5]*Math.Cos(x[9])+d*(x[5]+x[10]));
         }
     }
 
